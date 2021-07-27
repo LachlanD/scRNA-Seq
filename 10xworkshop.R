@@ -109,7 +109,7 @@ clst_k60 <- factor(wt_k60$membership)
 table(clst_k60)
 
 snn_k70 <- buildSNNGraph(sce, k=70, use.dimred="PCA")
-wt_k70 <- igraph::cluster_walktrap(snn_0)
+wt_k70 <- igraph::cluster_walktrap(snn_k70)
 clst_k70 <- factor(wt_k70$membership)
 table(clst_k70)
 
