@@ -1,4 +1,3 @@
-
 library(scater)
 library(scran)
 library(edgeR)
@@ -52,7 +51,7 @@ sce
 clst <- quickCluster(sce, method="igraph", min.mean=0.5)
 table(clst)
 
-sce <- computeSumFactors(sce, cluster=clst, min.mean=0.5)
+sce <- computeSumFactors(sce, cluster=clst)
 summary(sizeFactors(sce))
 
 libSize <- dge$samples$lib.size
@@ -102,3 +101,41 @@ plotTSNE(sce, colour_by="log10LibSize")
 p1 <- plotTSNE(sce, colour_by="Krt14") + ggtitle("Krt14")
 p2 <- plotTSNE(sce, colour_by="Krt18") + ggtitle("Krt18")
 multiplot(p1, p2, cols=2)
+
+
+snn_k60 <- buildSNNGraph(sce, k=60, use.dimred="PCA")
+wt_k60 <- igraph::cluster_walktrap(snn_k60)
+clst_k60 <- factor(wt_k60$membership)
+table(clst_k60)
+
+snn_k70 <- buildSNNGraph(sce, k=70, use.dimred="PCA")
+wt_k70 <- igraph::cluster_walktrap(snn_0)
+clst_k70 <- factor(wt_k70$membership)
+table(clst_k70)
+
+sce$Cluster <- clst_k60
+k60 <- plotTSNE(sce, colour_by="Cluster") + ggtitle("SNN clutering with k=60")
+
+sce$Cluster <- clst_k70
+k70 <- plotTSNE(sce, colour_by="Cluster") + ggtitle("SNN clutering with k=70")
+multiplot(k60, k70, cols=2)
+
+hclst <- quickCluster(sce, subset.row=hvg, assay.type="logcounts", method="hclust", min.size=50, min.mean=0.5)
+table(hclst)
+
+sce$Cluster <- factor(hclst)
+plotTSNE(sce, colour_by="Cluster") + ggtitle("Hierarchical clustering")
+
+markers <- findMarkers(sce, group=sce$Cluster, direction="up")
+
+marker.set <- as.data.frame(markers[["1"]])
+head(marker.set, n=20L)
+
+
+top10 <- lapply(markers, "[", 1:10, )
+GSet <- as.vector(sapply(top10, "rownames"))
+GSet <- GSet[!duplicated(GSet)]
+GSet
+
+library(pheatmap)
+plotHeatmap(sce, features=GSet, exprs_values="logcounts", color=colorRampPalette(c("blue","white","red"))(100), columns=order(sce$Cluster), labels_col="", colour_columns_by="Cluster", cluster_cols=FALSE, center=TRUE, symmetric=TRUE, zlim=c(-3, 3))
